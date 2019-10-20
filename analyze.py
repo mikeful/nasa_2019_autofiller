@@ -12,7 +12,7 @@ import copy
 def analyze(dataframe):
     # Cluster rows
     # TODO KPrototypes requires continuous numerical values, chicken-egg problem
-    # TODO Detect column types for clustering, KPrototypes needs categorial column indexes
+    # TODO Detect column types for clustering?, KPrototypes needs categorial column indexes
 
     clusterer = KMeans(n_clusters=3, n_init=5, verbose=1, n_jobs=-1)
     clusters = clusterer.fit_predict(dataframe)
@@ -47,6 +47,7 @@ def analyze(dataframe):
                 training_row = []
 
                 # Add to training data as input or target
+                # TODO Add one hot encoding for categorical columns
                 for field_tuple in row._asdict().items():
                     field_name = field_tuple[0]
                     field_value = field_tuple[1]
@@ -65,6 +66,7 @@ def analyze(dataframe):
                 train_x.append(training_row)
 
             # Train model
+            # TODO Test different ML types and parameters
             print('Training model for cluster', cluster_index, 'column', column_name)
             if(cluster_data[column_name].dtype == numpy.float64 or cluster_data[column_name].dtype == numpy.int64):
                 # Treat as numeric
@@ -75,10 +77,12 @@ def analyze(dataframe):
 
             model.fit(train_x, train_y)
 
+            # TODO Add model evaluation
+
             # Insert trained model to model set
             models[cluster_index][column_name] = model
 
-    # TODO Save models
+    # TODO Save models and preprocessors
 
     return clusterer, models
 
@@ -87,6 +91,7 @@ def fill(dataframe, models, clusterer):
 
     for row in dataframe.sample(n=100).itertuples():
         # Add to prediction input data
+        # TODO Add one hot encoding for categorial columns
         predict_row = []
         for field_tuple in row._asdict().items():
             field_name = field_tuple[0]
@@ -101,6 +106,8 @@ def fill(dataframe, models, clusterer):
         cluster_index = clusterer.predict([predict_row])[0]
 
         # Select field at random and predict the value if it was missing
+        # TODO Detect missing/empty columns
+        # TODO Test/learn different orders of filling values in multiple are missing
         selected_field = random.choice(dataset_fields)
         selected_field_index = dataset_fields.index(selected_field)
 
@@ -132,6 +139,7 @@ if __name__== "__main__":
     data = pandas.read_csv(filename)
     clusterer, models = analyze(data)
 
+    # TODO Move filling values to separate script
     data = pandas.read_csv(filename)
     fill(data, models=models, clusterer=clusterer)
 
